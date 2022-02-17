@@ -1,0 +1,358 @@
+---
+title: "Week-07-Notes"
+author: "Andrew Nalundasan"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+library(haven)
+library(here)
+library(readxl)
+library(vtable)
+library(corrplot)
+library(GGally)
+library(jtools)
+```
+
+# "Can Surveillance AI Make the Workplace Safe?" (Chamorro-Premuzic)
+
++ surveillance - ubiquitous temptation by people in power to exercise control
+
+    + typically have a negative connotation
+    + natural tendency is to push back on surveillance 
+    
++ surveillance can monitor for COVID-19 and keep workforce safe & healthy
++ "creepy" is a common emotion when talking about surveillance
+
+    + creepy <- potentially dangerous, not actually dangerous (yet)
+    + leads to anxiety and nervousness
+
++ values discussion: 
+
+    + autonomy (aka "freedom")
+        + value doing things our own way on our own time
+        + surveillance threatens autonomy
+        + autonomy is important to people as a motivator
+        + opposite of micromanaging
+    + trust
+        + surveillance done poorly is the opposite of trusting employees
+        + the more i'm surveilled, the less I'm trusted
+        + the less I'm trusted, the less you're trusted
+
++ digital lifestyles make surveillance easier to achieve
++ amazon - corporate surveillance in terms of bodily work
+
+    + want to move to monitoring "intellectual activity" 
+    + this is now possible with big data and digital lifestyles
+    
++ legal constraints vs. ethical constraints
+
+    + corporate surveillance is a major power imbalance 
+    + ethics is about **CONSENT**
+    
++ introduction of ethical constraints
+
+    1. "no surprise rule" - organizations must make employees aware of what they're monitoring
+        + knowing what data is collected and **WHY**
+        + if an employer can communicate WHY they're collecting the data, employees are more likely to give buy-in
+    2. employees must have option to opt in or out
+        + opt-in in voluntarily 
+        + there should be a benefit to data collection
+        + people are more likely to opt-in if they understand how it benefits them
+    3. There should be a real benefit to employees and not just the company
+        + corporate surveillance:
+            1. how you're going to do it
+            2. how to explain it to the employees
+            3. how employees will benefit by opting in
+        
++ Analytics professionals: 
+    
+    + handle the data (wrangle)
+    + interpret the data
+    + communicate the data
+    
+# Puzzle of Motivation (TED Talk, Daniel Pink, July 2009, Oxford, England)
+
++ Don't want to tell a story, want to make a case on rethinking how to run our businesses
++ Overcome functional fixedness - use the container of the thumb tacks to use as a platform for the candle
++ Power of incentives - if you want people to perform better, reward them via incentives
+
+    + incenctives dulls thinking and blocks creativity
+    + contingent motivators ("if you do this, then you get that")
+    + "There's a mismatch between what science knows and what business does"
+    + higher incentives leads to worse performance
+    + LSE: "financial incentives results in poor business performance"
+    
++ intrinsic interests
+
+    1. autonomy - urge to direct our own lives
+    2. mastery - desire to get better at something that matters
+    3. purpose - yearning to do what we do in the service of something larger than ourselves
+    
++ **management** leads to compliance
++ **self direction** leads to engagement
++ ROWE - Results Only Working Environment
+    
+    + people don't have schedules. They have complete autonomy on how they get their work done
+    
++ intrinsic motivators vs. extrinsic motivators
+
+# "How to Monitor Employees - While Respecting Their Privacy" (Blackman)
+Blackman, R. 2020, May. *How to monitor your employees - while respecting their privacy*. Harvard Business Review
+
++ Employee Monitoring <- Corporate Surveillance
++ Goal ("end") of corporations: increase employee productivity
+    
+    + maximize efficiency
+    + don't want employees to take advantage of company
+
++ talking with c-level executives: need to talk in terms of "risk"
+
+    + corporations don't care much for ethics. 
+    + want to know how risk is being introduced to the company
+    
++ 2 fundamental values: 
+
+    1. Trust
+    2. Autonomy - doing things your own way
+    
++ micromanagement is the opposite of respecting employee's autonomy
+
++ 6 principles of respecting employees privacy while surveilling them: 
+
+    1. Choose metrics carefully by involveing all relevant stakeholders
+        + monitor only relevant and necessary data 
+        + must be intentionaly with the metrics chosen to monitor productivity
+    2. Be transparent about what's being monitored and why
+        + take time to communicate openly and honestly
+        + improved buy-in when communication takes place and not being secretive about surveillance
+    3. Offer carrots as well as sticks
+        + donkey is motivated by a stick (beat donkey with stick) or carrot (donkey follows the carrot)
+        + don't just use monitoring as punitive measures, but make it an incentive system
+    4. Good workers are rarely good workers all the time
+        + People are not robots
+        + Humans have lives and can ebb and flow in productivity
+        + Robots are expected to have same level of productivity over time
+    5. Make sure thate are no disproprotionate effects
+        + Discriminatory monitoring - 400 years of white supremacy, 1000s of years of patriarchy
+        + monitoring ends up being discriminatory and harming lower level groups
+    6. Decrease monitoring when and where you can
+        + There's no point in checking this, so stop monitoring specific areas
+        
+        
+# "HR Analytics at ScaleneWorks" (Rahul and Kumar)
+
+## Read in data and explore
+        
+```{r}
+scalene_works <- read_csv(here("DataSet_HR Analytics at Scalene Works.csv"))
+vtable(scalene_works)
+summary(scalene_works)
+head(scalene_works, 10)
+```
+
+## Rough visuals and exploration
+
+```{r}
+p <- scalene_works %>% 
+  ggplot(mapping = aes(x = Age, fill = Status))
+
+p + geom_histogram(bins = 10, position = "dodge") + 
+  labs(title = "Employees joined by age")
+
+```
+
+**Comments**
+
++ Early 30s is biggest source of 'joined' employees
++ Early 30s has lowest 'renege' rate
++ Late 20s have slightly higher 'renege' rate than early 20s
++ Late 20s have slightly lower 'joined' rate than early 20s
++ Late 30s has 'renege' rate of ~ 50%
+
+```{r}
+p <- scalene_works %>% 
+  ggplot(mapping = aes(x = Gender, fill = Status))
+
+p + geom_histogram(bins = 10, stat = "count", position = "dodge") + 
+  labs(title = "Employees joined by Gender")
+```
+
+**Comments**
+
++ Males have higher 'renege' rate, ~ 25%
++ Females 'renege' rate is almost 50%
++ Significantly more Males seem to be hired 
+
+```{r}
+p <- scalene_works %>% 
+  ggplot(mapping = aes(x = `Candidate Source`, fill = Status))
+
+p + geom_histogram(bins = 10, stat = "count", position = "dodge") + 
+  labs(title = "Employees joined by Candidate Source")
+```
+
+**Comments**
+
++ Direct candidate resources yields the most amount of 'joined' employees as well as 'not joined'
+
+    + Still, Direct is the best source for 'joined' 
+
++ Agency appears to have ~2:1 ratio of 'joined' vs. 'not joined'. 
+
+    + Hires made via Agency seem to have the largest 'renege' rate
+    
++ Employee Referral has smallest amount of 'not joined' employees
+
+    + Employee Referral also is the smallest source of 'joined' employees
+    
+    
+```{r}
+p <- scalene_works %>% 
+  ggplot(mapping = aes(x = `Joining Bonus`, fill = Status))
+
+p + geom_histogram(bins = 10, stat = "count", position = "dodge") + 
+  labs(title = "Employees joined by Joining Bonus")
+```
+
+**Comments**
+
++ Very surprising. 
++ Half of candidates that were offered signing bonuses ended up renegging 
++ 25% of candidates not offered a signing bonus ended up renegging
++ 8000+ candidates joined the company without being offered a signing bonus
+
+```{r}
+p <- scalene_works %>% 
+  ggplot(mapping = aes(x = `Offered band`, fill = Status))
+
+p + geom_histogram(bins = 10, stat = "count", position = "dodge") + 
+  labs(title = "Employees joined by Offered Band")
+```
+
+**Comments**
+
++ 20% of E0s renege
++ 42% of E1s renege
++ 46% of E2s renege
++ 42% of E3s renege
+
+
+```{r}
+p <- scalene_works %>% 
+  ggplot(mapping = aes(x = `Duration to accept offer`, fill = Status))
+
+p + geom_histogram(stat = "count", position = "dodge") +
+  scale_x_log10() +
+  #scale_x_continuous(breaks = 25) +
+  labs(title = "Employees joined by Duration to accept offer")
+```
+
+```{r}
+scalene_corr <- scalene_works %>% 
+  select_if(is.numeric) %>% # Use to select just the numeric variables
+  cor() %>% 
+  round(2) %>% 
+  kable()
+
+scalene_corr
+```
+
+**Comments**
+
++ Biggest positive correlations:
+
+    + Age + Condidate Ref (0.36)
+    + Notice Period + Duration to accept offer (0.30)
+    + Rex in Yrs + Notice period (0.27)
+    + Percent hike offered in CTC + Percent hike expected in CTC (0.64)
+    + Percent difference CTC + Percent hike offered in CTC (0.57)
+    + Age + Rex in Yrs (0.48)
+    
++ Biggest negative correlations
+
+    + Notice period + Candidate Ref (-0.22)
+    + Percent difference CTC + Percent hike expected in CTC (-0.18)
+
+```{r}
+corr_sm <- scalene_works %>% select(c("Joining Bonus", "Gender", "Candidate Source", "Age", "Status"))
+
+ggpairs(data = corr_sm, mapping = aes(color = Status),
+        upper = list(continuous = wrap("density"), combo = "box_no_facet"),
+        lower = list(continuous = wrap("points"), combo = wrap("dot_no_facet")))
+```
+
+**Comments**
+
++ I don't know how to read this. This doesn't give me much to work off of at all
+
+### Regressions
+
++ Ho: some activity does NOT impact the variable of interest
++ Ha: some activity DOES impact the variable of interest
+
++ Variable of interest <- Status
++ Ho: Gender does not impact Status
++ Ha: Gender impacts Status
+
+Data Transformations:
+
+```{r}
+num_scalene <- scalene_works %>% 
+  mutate(num_status = recode(Status,
+                                "Not Joined" = 0,
+                                "Joined" = 1)) %>% 
+  mutate(num_gender = recode(Gender,
+                                "Female" = 0,
+                                "Male" = 1)) %>% 
+  mutate(num_join_bonus = recode(`Joining Bonus`,
+                                 "No" = 0,
+                                 "Yes" = 1))
+
+```
+
+Wilcox statistical test:
+
+```{r}
+wilcox.test(num_scalene$num_gender[num_scalene$num_status == 0], 
+            num_scalene$num_gender[num_scalene$num_status == 1], conf.int = TRUE)
+```
+
+**Comments**
+
++ p-value is tiny, so reject the Ho. 
++ Gender does impact status!!
+
+linear regression:
+
+```{r}
+reg_gender <- lm(num_status ~ num_gender, num_scalene)
+export_summs(reg_gender)
+```
+
+**Comments**
+
++ gender has a slight negative impact on status
+
+```{r}
+reg_join_bonus <- lm(num_status ~ num_join_bonus, num_scalene)
+export_summs(reg_join_bonus)
+```
+
+**Comments**
+
++ Being offered a joining bonus does impact status
+
+
