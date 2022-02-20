@@ -168,11 +168,18 @@ head(scalene_works, 10)
 ## Rough visuals and exploration
 
 ```{r}
+cols <- c("Joined" = "#37c871", "Not Joined" = "#ff0000")
+
 p <- scalene_works %>% 
   ggplot(mapping = aes(x = Age, fill = Status))
 
 p + geom_histogram(bins = 10, position = "dodge") + 
-  labs(title = "Employees joined by age")
+  scale_fill_manual(values = cols) +
+
+  #aesthetics = "colour") +
+  #scale_fill_manual(c("green", "red")) +
+  labs(title = "Employees joined by age") + 
+  theme(legend.position = "right")
 
 ```
 
@@ -189,7 +196,8 @@ p <- scalene_works %>%
   ggplot(mapping = aes(x = Gender, fill = Status))
 
 p + geom_histogram(bins = 10, stat = "count", position = "dodge") + 
-  labs(title = "Employees joined by Gender")
+  labs(title = "Employees joined by Gender") + 
+  scale_fill_manual(values = cols)
 ```
 
 **Comments**
@@ -203,7 +211,8 @@ p <- scalene_works %>%
   ggplot(mapping = aes(x = `Candidate Source`, fill = Status))
 
 p + geom_histogram(bins = 10, stat = "count", position = "dodge") + 
-  labs(title = "Employees joined by Candidate Source")
+  labs(title = "Employees joined by Candidate Source") +
+  scale_fill_manual(values = cols)
 ```
 
 **Comments**
@@ -226,7 +235,8 @@ p <- scalene_works %>%
   ggplot(mapping = aes(x = `Joining Bonus`, fill = Status))
 
 p + geom_histogram(bins = 10, stat = "count", position = "dodge") + 
-  labs(title = "Employees joined by Joining Bonus")
+  labs(title = "Employees joined by Joining Bonus") +
+  scale_fill_manual(values = cols)
 ```
 
 **Comments**
@@ -241,7 +251,8 @@ p <- scalene_works %>%
   ggplot(mapping = aes(x = `Offered band`, fill = Status))
 
 p + geom_histogram(bins = 10, stat = "count", position = "dodge") + 
-  labs(title = "Employees joined by Offered Band")
+  labs(title = "Employees joined by Offered Band") +
+  scale_fill_manual(values = cols)
 ```
 
 **Comments**
@@ -256,7 +267,8 @@ p <- scalene_works %>%
   ggplot(mapping = aes(x = `DOJ Extended`, fill = Status))
 
 p + geom_histogram(bins = 10, stat = "count", position = "dodge") + 
-  labs(title = "Employees joined by Date of Joining Extension")
+  labs(title = "Employees joined by Date of Joining Extension") +
+  scale_fill_manual(values = cols)
 ```
 
 **Comments**
@@ -272,7 +284,8 @@ p <- scalene_works %>%
 p + geom_histogram(stat = "count", position = "dodge") +
   scale_x_log10() +
   #scale_x_continuous(breaks = 25) +
-  labs(title = "Employees joined by Duration to accept offer")
+  labs(title = "Employees joined by Duration to accept offer") +
+  scale_fill_manual(values = cols)
 ```
 
 
@@ -467,24 +480,116 @@ wilcox.test(num_scalene$num_gender[num_scalene$num_status == 0],
 + p-value is tiny, so reject the Ho. 
 + Gender does impact status!!
 
-linear regression:
+### linear probability regression:
 
 ```{r}
-reg_gender <- lm(num_status ~ num_gender, num_scalene)
-export_summs(reg_gender)
+# quick and dirty
+# run OLS on outcome
+
+scalene_works <- scalene_works %>% 
+  mutate(status_01 = case_when(Status == 'Joined' ~ 1,
+                               Status == 'Not Joined' ~ 0, 
+                               TRUE ~ NA_real_))
+
+regression <- scalene_works %>% 
+  select(-'Candidate Ref', -'Status') %>% 
+  lm(status_01 ~ ., data = .)
+
+summary(regression)
+
+
+
+tabyl(scalene_works, Status)
 ```
 
 **Comments**
 
-+ gender has a slight negative impact on status
++ linear probability model - probability of one outcome
++ linear probability model because outcome is a 0/1 rather than continuous variable
+
++ Statistically significant drivers:
+
+    + DOJ Extended - Yes
+        + every offer made at where the candidate extended their date of joining, probability of Joining increases by 39.05 percentage points
+    + Notice Period
+        + every 1 unit increase in Notice Period, probability of Joining decreases by 0.295 percentage points
+        + This means that the higher the Notice Period, the more likely they would renege their offer
+    + Offered Band E1
+        + every offer made at E1, probability of Joining increases by 15.7 percentage points
+    + Offered Band E2
+        + every offer made at E2, probability of Joining increases by 13.7 percentage points
+    + Offered Band E3
+        + every offer made at E3, probability of Joining increases by 17.2 percentage points
+    + Candidate relocate actual - Yes
+        + every offer made with candidate relocation, probability of Joining increases by 20.93 percentage points
+    + Candidate Source - Direct
+        + every offer made to a Direct Candidate Source, probability of Joining increases by 5.25 percentage points
+    + Candidate Source - Employee Referral
+        + every offer made to an Employee Referral, probability of Joining increases by 8.96 percentage points
+    + LOB - BFSI
+        + every offer made to fill a BFSI role, probability of Joining increases by 6.13 percentage points
+    + LOB - ETS
+        + every offer made to fill a ETS role, probability of Joining increases by 7.43 percentage points
+    + LOB - INFRA
+        + every offer made to fill a INFRA role, probability of Joining increases by 10.93 percentage points
+    + LOB - MMS
+        + every offer made to fill a MMS role, probability of Joining increases by 30.89 percentage points
+    + Age
+        + every 1 year of Age, probability of Joining increases by 0.47 percentage points (measuring change in percent)
+    
 
 ```{r}
-reg_join_bonus <- lm(num_status ~ num_join_bonus, num_scalene)
-export_summs(reg_join_bonus)
+min_age <- min(scalene_works$Age)
+max_age <- max(scalene_works$Age)
+med_age <- median(scalene_works$Age)
+
+pred_df <- expand.grid(Age = (seq(from = min_age, to = max_age, length.out = 100)), Status = c("Joined", "Not Joined"))
+
+pred_df
 ```
 
-**Comments**
+```{r}
+reg_age <- lm(status_01 ~ Age, data = scalene_works)
+summary(reg_age)
 
-+ Being offered a joining bonus does impact status
+pred_out <- predict(object = reg_age, newdata = pred_df, interval = "predict")
+pred_bind <- cbind(pred_df, pred_out)
+pred_bind
+```
+
+```{r}
+p <- ggplot(data = subset(pred_bind, Status %in% c("Joined", "Not Joined")),
+            aes(x = Age,
+                y = fit, ymin = lwr, ymax = upr, 
+                color = Status,
+                fill = Status, 
+                group = Status))
+
+p + geom_point(data = subset(scalene_works,
+                             Status %in% c("Joined", "Not Joined")),
+               aes(x = Age, y = "Rex in Yrs",
+                   color = Status), 
+               alpha = 0.5, 
+               inherit.aes = FALSE) + 
+  geom_line() + 
+  geom_ribbon(alpha = 0.2, color = FALSE) + 
+  scale_x_log10()
+
+p <- ggplot(data = pred_bind, 
+            aes(x = Age, 
+                y = fit, ymin = lwr, ymax = upr,
+                color = Status,
+                fill = Status))
+
+p + geom_point()
+p + geom_point(data = subset(scalene_works,
+                             Status %in% c("Joined", "Not Joined")),
+               aes(x = Age, y = Age, 
+                   color = Status),
+               alpha = 0.5,
+               inherit.aes = FALSE) +
+  geom_line() + 
+  geom_ribbon(alpha = 0.2, color = FALSE)
+```
 
 
