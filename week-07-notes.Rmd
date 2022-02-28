@@ -279,6 +279,30 @@ p + geom_histogram(bins = 10, stat = "count", position = "dodge") +
 
 ```{r}
 p <- scalene_works %>% 
+  ggplot(mapping = aes(x = `Candidate relocate actual`, fill = Status))
+
+p + geom_histogram(bins = 10, stat = "count", position = "dodge") + 
+  labs(title = "Employees joined by Relocation Offer") +
+  scale_fill_manual(values = cols)
+```
+
+**Comments**
+
++ Renege rate appears to be 0 when relocation is offered to the candidate
+
+```{r}
+p <- scalene_works %>% 
+  ggplot(mapping = aes(x = LOB, fill = Status))
+
+p + geom_histogram(bins = 10, stat = "count", position = "dodge") + 
+  labs(title = "Employees joined by LOB") +
+  scale_fill_manual(values = cols) + 
+  coord_flip()
+```
+
+
+```{r}
+p <- scalene_works %>% 
   ggplot(mapping = aes(x = `Duration to accept offer`, fill = Status))
 
 p + geom_histogram(stat = "count", position = "dodge") +
@@ -348,6 +372,15 @@ scalene_works %>%
 
 ```{r}
 scalene_works %>% 
+  tabyl(Status) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) 
+```
+
+
+```{r}
+scalene_works %>% 
   tabyl(Status, `Candidate Source`) %>% 
   adorn_totals(where = c("row", "col")) %>% 
   adorn_percentages(denominator = "all") %>% # creates proportions
@@ -365,12 +398,38 @@ scalene_works %>%
 
 **Comments**
 
-+ 1% of E0s renege
-+ 17% of E1s renege
-+ 9% of E2s renege
-+ 2% of E3s renege
++ 1% of E0s renege, 7% join
++ 17% of E1s renege, 40% join
++ 9% of E2s renege, 19% join
++ 2% of E3s renege, 4% join
++ 0% of E4s, E5s, and E6s renege
 
 + ~30% of candidates that accept the job offer end up renegging 
+
+```{r}
+scalene_works %>% 
+  tabyl(Status, `LOB`) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2)
+```
+
+
+```{r}
+scalene_works %>% 
+  tabyl(Status, `Candidate relocate actual`) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2)
+```
+
+**Comments**
+
++ For candidates that were offered relocation, 13% joined
++ For candidates that were not offered relocation, 58% joined
++ For candidates that were offered relocation, 0% reneged
++ For candidates that were not offered relocation, 29% reneged 
+
 
 ```{r}
 factor_scalene <- scalene_works %>% 
@@ -397,11 +456,11 @@ test_scalene <- factor_scalene[9867:12333,] # 20% of dataset
 ```
 
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 # fit the model
-model <- glm(factor_status ~ ., family = binomial(link = 'logit'), data = train_scalene)
-export_summs(model)
-summary(model)
+#model <- glm(factor_status ~ ., family = binomial(link = 'logit'), data = train_scalene)
+#export_summs(model)
+#summary(model)
 ```
 
 
@@ -497,8 +556,6 @@ regression <- scalene_works %>%
 
 summary(regression)
 
-
-
 tabyl(scalene_works, Status)
 ```
 
@@ -507,7 +564,7 @@ tabyl(scalene_works, Status)
 + linear probability model - probability of one outcome
 + linear probability model because outcome is a 0/1 rather than continuous variable
 
-+ Statistically significant drivers:
++ Positively significant drivers:
 
     + DOJ Extended - Yes
         + every offer made at where the candidate extended their date of joining, probability of Joining increases by 39.05 percentage points
@@ -537,6 +594,16 @@ tabyl(scalene_works, Status)
     + Age
         + every 1 year of Age, probability of Joining increases by 0.47 percentage points (measuring change in percent)
     
++ Negative drivers:
+
+    + Notice Period
+        + for every 1 unit increase in Notice Period, the probabilty of a candidate joining decreases by  0.295 percentage points
+    + Gender
+        + for every male that is offered a position, the probability of a male joining decreases by 2 percentage points
+    + Rex in Yrs
+        + for every 1 year increase in Relevant Experience in Years, the probability of a candidate joining decreases by 0.553 percentage points
+    
+        
 
 ```{r}
 min_age <- min(scalene_works$Age)
@@ -545,7 +612,7 @@ med_age <- median(scalene_works$Age)
 
 pred_df <- expand.grid(Age = (seq(from = min_age, to = max_age, length.out = 100)), Status = c("Joined", "Not Joined"))
 
-pred_df
+head(pred_df, 10)
 ```
 
 ```{r}
@@ -554,7 +621,7 @@ summary(reg_age)
 
 pred_out <- predict(object = reg_age, newdata = pred_df, interval = "predict")
 pred_bind <- cbind(pred_df, pred_out)
-pred_bind
+head(pred_bind, 10)
 ```
 
 ```{r}
